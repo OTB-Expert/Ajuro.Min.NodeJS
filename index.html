@@ -1,0 +1,129 @@
+<script src="jquery.sparkline.min.js" asp-append-version="true"></script>
+<script src="jquery.js" asp-append-version="true"></script>
+<script src="jquery.dataTables.min.js" asp-append-version="true"></script>
+<link rel="stylesheet" href="jquery.dataTables.min.css"/>
+
+<h1>NodeJS</h1>
+<h2>Public APIs</h2>
+    <table>
+        <tr>
+            <th>Domain</th>
+            <th>Link</th>
+        </tr>
+        <tr>
+            <td>
+                List companies
+            </td>
+            <td>
+                <a href="companies.json">companies.json</a>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Finance
+            </td>
+            <td>
+                <a href="https://github.com/public-apis/public-apis#finance">https://github.com/public-apis/public-apis#finance</a>
+            </td>
+        </tr>
+    </table>
+
+<h2>
+    <a href="https://datatables.net/" target="_blank">DataTables</a> from <a href="companies.json" target="_blank">JSON</a>
+</h2>
+
+<table id='data-table-0' class="display" style="width:100%"></table>
+
+<script>
+
+var table = null;
+var nth = 0;
+
+function fetchData(url, onSuccess){
+    $.ajax({
+        xhrFields: {
+            withCredentials: true 
+        },
+        crossDomain: true,
+        url: url,
+        dataType: 'json',
+        contentType: 'application/json',
+        type: 'GET',
+        // data: JSON.stringify(model),
+        success: function(json){
+            if(json.length == 0 && items.length == 0){
+                return;
+            }
+            items = json;
+            onSuccess(items);
+        },
+    }).fail(function(xhr, status, error) {
+        var errorMessage = xhr.status + ': ' + xhr.statusText;
+        console.log(errorMessage);
+    });
+}
+
+function createTable(json) {
+    
+    if(!json.length){
+        return;
+    }
+    var columns = json.length ? Object.getOwnPropertyNames(json[0]).map(p => { 
+        return {
+            title: p,
+            data: p,
+            render: function ( data, type, row ) {
+                if(typeof row[p] === 'object' && row[p] !== null){
+                    var keys = Object.keys(row[p]).filter(p=>p.indexOf('Id') >= 0);                    
+                    return JSON.stringify( keys.map(k=> { return  k+': '+row[p][k]  }) );
+                }
+                else{
+                    return JSON.stringify( row[p] );
+                }
+            },
+        }
+    }) : [ null ];
+
+    if(!table){
+    table = $('#data-table-' + nth).DataTable( {
+            "pageLength": 10,
+            data: json,
+            "columns": columns
+        } );
+    }
+
+    if(table)
+    {
+        table.clear().draw();
+        table.destroy();
+        table.clear().draw();
+    }
+    table = $('#data-table-' + nth).DataTable({
+        "pageLength": 10,
+        data: json,
+        "columns": columns
+    } );
+}
+
+$( document ).ready(function() {
+    var data = [
+        {
+            title: "List companies",
+            link: "companies.json",
+        },
+        {
+            title: "Finance",
+            link: "https://github.com/public-apis/public-apis#finance",
+        },
+    ];
+
+    // createTable(data);
+
+    // LOCAL RESOURCE
+    // fetchData("companies.json", createTable);
+
+    // REMOTE RESOURCE
+    fetchData("companies.json", createTable);
+
+});
+</script>
